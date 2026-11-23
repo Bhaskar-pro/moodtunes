@@ -8,7 +8,7 @@ AI-powered music recommendation system that detects your facial emotion via webc
 2. OpenCV detects your face → a CNN (trained on FER2013) classifies the emotion.
 3. The emotion is mapped to a mood category: `happy`, `sad`, `calm`, `energetic`.
 4. MySQL database is queried for curated songs matching that mood.
-5. Spotify Search API fetches album art + track link for each recommendation.
+5. You Tube Search API fetches album art + track link for each recommendation.
 6. Frontend UI reacts visually — the color and pulse of the "mood orb" change based on your detected mood.
 
 ## Project structure
@@ -24,8 +24,8 @@ MoodTunes/
 │   ├── schema.sql              # MySQL schema
 │   ├── db.py                    # DB connection helper
 │   └── seed_songs.py           # Curated song seed data
-├── spotify/
-│   └── spotify_client.py       # Spotify Search API wrapper
+├── You Tube/
+│   └── You Tube_client.py       # You Tube Search API wrapper
 ├── templates/
 │   └── index.html              # Mood-reactive frontend
 ├── uploads/                    # Temp storage for captured images
@@ -37,7 +37,7 @@ MoodTunes/
 
 ## Setup — Option A: Docker (recommended)
 
-1. Copy `.env.example` to `.env` and fill in your Spotify credentials (get them free at https://developer.spotify.com/dashboard).
+1. Copy `.env.example` to `.env` and fill in your You Tube credentials (get them free at https://developer.You Tube.com/dashboard).
 2. Run:
    ```bash
    docker-compose up --build
@@ -62,7 +62,7 @@ MoodTunes/
    ```bash
    mysql -u root -p < database/schema.sql
    ```
-3. Copy `.env.example` → `.env`, fill DB + Spotify credentials.
+3. Copy `.env.example` → `.env`, fill DB + You Tube credentials.
 4. Seed songs:
    ```bash
    cd database && python seed_songs.py && cd ..
@@ -87,9 +87,9 @@ MoodTunes/
 
 If you don't want to train from scratch, you can also drop in any pretrained FER2013 Keras `.h5` model with the same 7-class output order (Angry, Disgust, Fear, Happy, Sad, Surprise, Neutral) as `emotion_model/emotion_model.h5`.
 
-## Notes on Spotify usage
+## Notes on You Tube usage
 
-Only the **Search** endpoint is used (to get album art + track link). We deliberately avoid the deprecated/restricted `audio-features` and `recommendations` endpoints — mood matching logic lives entirely in our own MySQL curation + CNN, not in Spotify's data.
+Only the **Search** endpoint is used (to get album art + track link). We deliberately avoid the deprecated/restricted `audio-features` and `recommendations` endpoints — mood matching logic lives entirely in our own MySQL curation + CNN, not in You Tube's data.
 
 ## Resume/viva talking points
 
