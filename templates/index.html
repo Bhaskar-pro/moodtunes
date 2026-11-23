@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoodTunes — Music that reads the room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky:#EAF4FF; --sky-2:#D9ECFF; --ink:#14233A; --muted:#5B6B80;
+    --blue:#3B8FE0; --blue-dark:#2A74BE; --teal:#2FB8B0; --card:#FFFFFF; --line:#DCE7F3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Inter,system-ui,sans-serif;color:var(--ink);min-height:100vh;position:relative;overflow-x:hidden;
+    background:linear-gradient(180deg,var(--sky) 0%,#F6FAFF 60%,#fff 100%);
+  }
+
+  /* background illustration (SVG, no image file needed) */
+  .scene{position:fixed;left:0;right:0;bottom:0;height:42vh;z-index:0;pointer-events:none}
+  .scene svg{width:100%;height:100%;display:block}
+
+  nav{
+    position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+    max-width:1100px;margin:0 auto;padding:22px 24px;
+  }
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:22px;color:var(--blue-dark)}
+  .logo i{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:inline-block}
+  .nav-links{display:flex;gap:26px;align-items:center;font-size:14px;font-weight:500}
+  .nav-links a{color:var(--ink);text-decoration:none}
+  .nav-links a:hover{color:var(--blue)}
+
+  .btn{
+    border:0;cursor:pointer;font:inherit;font-weight:600;font-size:14px;
+    background:var(--blue);color:#fff;padding:11px 22px;border-radius:6px;transition:background .15s;
+  }
+  .btn:hover{background:var(--blue-dark)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--sky)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  main{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:28px 24px 140px;text-align:center}
+  h1{font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.02em}
+  .sub{max-width:520px;margin:14px auto 0;color:var(--muted);font-size:16px;line-height:1.6}
+
+  /* camera block */
+  .stage{position:relative;max-width:520px;margin:36px auto 0}
+  .camera{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;
+    box-shadow:0 18px 50px rgba(42,116,190,.14);
+  }
+  .viewport{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#0f1b2d}
+  video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+  .placeholder{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:8px;color:#9fb3cc;font-size:14px;text-align:center;padding:12px;
+  }
+  .placeholder svg{width:38px;height:38px;stroke:#9fb3cc}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+  .status{margin-top:12px;font-size:13px;color:var(--muted);min-height:18px}
+
+  .bubble{
+    position:absolute;background:#fff;border-radius:50%;box-shadow:0 8px 24px rgba(42,116,190,.18);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--blue-dark);
+  }
+  .b1{width:64px;height:64px;left:-86px;top:30px}
+  .b2{width:50px;height:50px;right:-70px;top:10px}
+  .b3{width:58px;height:58px;right:-92px;top:190px}
+  .b4{width:44px;height:44px;left:-64px;top:210px}
+  @media(max-width:760px){.bubble{display:none}.nav-links a{display:none}}
+
+  /* results */
+  .results{max-width:520px;margin:28px auto 0;text-align:left}
+  .mood-chip{
+    display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px;
+  }
+  .mood-chip b{width:10px;height:10px;border-radius:50%;background:var(--teal)}
+  .songs{list-style:none;margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .songs li{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .songs li:last-child{border-bottom:0}
+  .art{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:linear-gradient(135deg,var(--sky-2),#bfe3f3)}
+  .songs .t{font-weight:600;font-size:15px}
+  .songs .a{font-size:13px;color:var(--muted);margin-top:2px}
+  .songs a{margin-left:auto;color:var(--blue);font-size:13px;font-weight:600;text-decoration:none}
+  .songs a:hover{text-decoration:underline}
+  .msg{text-align:center;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="scene" aria-hidden="true">
+  <svg viewBox="0 0 1440 400" preserveAspectRatio="none">
+    <path d="M0 260 C240 190 480 300 760 240 C1040 180 1220 270 1440 220 L1440 400 L0 400Z" fill="#CBE6F7"/>
+    <path d="M0 310 C300 250 560 340 840 290 C1100 245 1280 320 1440 290 L1440 400 L0 400Z" fill="#B5DDF0"/>
+    <g fill="#4FC9D6"><ellipse cx="170" cy="250" rx="62" ry="78"/><ellipse cx="1280" cy="238" rx="54" ry="70"/></g>
+    <g fill="#2FB8B0"><ellipse cx="120" cy="285" rx="38" ry="50"/><ellipse cx="1335" cy="272" rx="36" ry="48"/></g>
+    <g stroke="#1B4F6B" stroke-width="4" stroke-linecap="round"><path d="M170 330V250"/><path d="M1280 320V240"/></g>
+  </svg>
+</div>
+
+<nav>
+  <div class="logo"><i></i>MoodTunes</div>
+  <div class="nav-links">
+    <a href="#">Home</a>
+    <a href="#">How it works</a>
+    <a href="#">About</a>
+    <button class="btn" id="navStart">Get Started</button>
+  </div>
+</nav>
+
+<main>
+  <h1>Music that reads the room</h1>
+  <p class="sub">Show your face. Get a tracklist that actually matches how you feel.</p>
+
+  <div class="stage">
+    <span class="bubble b1">Happy</span>
+    <span class="bubble b2">Calm</span>
+    <span class="bubble b3">Focus</span>
+    <span class="bubble b4">Sad</span>
+
+    <div class="camera">
+      <div class="viewport" id="cameraFeed">
+        <video id="video" autoplay playsinline muted hidden></video>
+        <div class="placeholder" id="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <span id="placeholderText">Camera is off</span>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn ghost" id="startCameraBtn">Start Camera</button>
+        <button class="btn" id="readMoodBtn">Read My Mood</button>
+        <button class="btn ghost" id="uploadBtn">Upload Photo Instead</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <input type="file" id="uploadInput" accept="image/png,image/jpeg" style="display:none">
+
+  <div class="results" id="results"></div>
+</main>
+
+<script>
+  const video = document.getElementById('video');
+  const placeholder = document.getElementById('placeholder');
+  const placeholderText = document.getElementById('placeholderText');
+  const startBtn = document.getElementById('startCameraBtn');
+  const readBtn = document.getElementById('readMoodBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadInput = document.getElementById('uploadInput');
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+
+  let stream = null;
+
+  document.getElementById('navStart').addEventListener('click', () => {
+    startBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  startBtn.addEventListener('click', async () => {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      video.srcObject = null;
+      video.hidden = true;
+      placeholder.style.display = 'flex';
+      placeholderText.textContent = 'Camera is off';
+      startBtn.textContent = 'Start Camera';
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      video.hidden = false;
+      placeholder.style.display = 'none';
+      startBtn.textContent = 'Stop Camera';
+      statusEl.textContent = '';
+    } catch (err) {
+      console.error('Camera error:', err);
+      placeholderText.textContent = 'Camera access denied';
+    }
+  });
+
+  function showStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function renderResults(data) {
+    if (data.error) {
+      resultsEl.innerHTML = `<div class="msg">${esc(data.error)}</div>`;
+      return;
+    }
+    const songsHtml = (data.songs || []).map(song => {
+      const sp = song.music || {};
+      const art = sp.image || sp.album_art || sp.cover || sp.image_url || '';
+      const artHtml = art
+        ? `<img class="art" src="${esc(art)}" alt="">`
+        : `<div class="art"></div>`;
+      const link = sp.url
+        ? `<a href="${esc(sp.url)}" target="_blank" rel="noopener">Listen</a>`
+        : '';
+      return `
+        <li>
+          ${artHtml}
+          <div>
+            <div class="t">${esc(song.title)}</div>
+            <div class="a">${esc(song.artist)}</div>
+          </div>
+          ${link}
+        </li>`;
+    }).join('');
+
+    resultsEl.innerHTML = `
+      <span class="mood-chip"><b></b>Feeling ${esc(data.emotion)} · ${esc(data.mood)} picks</span>
+      <ul class="songs">${songsHtml}</ul>`;
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function analyzeImage(blob) {
+    const formData = new FormData();
+    formData.append('image', blob, 'frame.jpg');
+    showStatus('Analyzing your mood…');
+    readBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+      const data = await res.json();
+      renderResults(data);
+      showStatus('');
+    } catch (err) {
+      console.error('Analyze error:', err);
+      showStatus('Kuch gadbad ho gayi, dubara try karo.');
+    }
+    readBtn.disabled = false;
+  }
+
+  readBtn.addEventListener('click', () => {
+    if (!stream) {
+      showStatus('Pehle Start Camera dabao.');
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => analyzeImage(blob), 'image/jpeg');
+  });
+
+  uploadBtn.addEventListener('click', () => uploadInput.click());
+
+  uploadInput.addEventListener('change', () => {
+    const file = uploadInput.files[0];
+    if (file) analyzeImage(file);
+    uploadInput.value = '';
+  });
+</script>
+
+</body>
+</html>

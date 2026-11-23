@@ -1,0 +1,10 @@
+.env
+venv/
+__pycache__/
+*.pyc
+uploads/*
+!uploads/.gitkeep
+.vscode/
+.idea/git status
+emotion_model/archive/
+emotion_model/archive.zip
